@@ -23,3 +23,10 @@ predict = "footy.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["footy*"]
+
+[tool.pytest.ini_options]
+# The environment ships an incompatible pytest-asyncio that crashes on package
+# collection (AttributeError: 'Package' object has no attribute 'obj').
+# This project uses no asyncio tests, so disable that plugin for clean runs.
+addopts = "-p no:asyncio"
+testpaths = ["tests"]
