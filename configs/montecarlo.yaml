@@ -1,0 +1,5 @@
+n_sims: 100000
+seed: 42
+max_goals: 10
+ci_level: 0.90
+top_scores: 8
