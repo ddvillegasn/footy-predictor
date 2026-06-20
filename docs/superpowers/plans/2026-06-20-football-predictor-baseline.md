@@ -2268,6 +2268,167 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ---
 
+## Task 18: Temporal hold-out evaluation driver
+
+**Files:**
+- Create: `footy/evaluate.py`
+- Test: `tests/test_evaluate.py`
+
+- [ ] **Step 1: Write the failing test**
+
+`tests/test_evaluate.py`:
+```python
+import pandas as pd
+
+from footy.evaluate import temporal_holdout
+
+MODEL_CFG = {"xi": 0.0, "max_goals": 10, "home_advantage_init": 0.25,
+             "ridge": 0.01, "min_matches_reliable": 10, "model_version": "baseline-v1.0.0"}
+MC_CFG = {"n_sims": 20000, "seed": 42, "max_goals": 10, "ci_level": 0.90, "top_scores": 8}
+
+
+def _matches():
+    rows = []
+    # Train period: Brazil dominates Haiti and Peru.
+    for _ in range(10):
+        rows.append(("2018-01-01", "Brazil", "Haiti", 4, 0))
+        rows.append(("2018-06-01", "Brazil", "Peru", 3, 0))
+        rows.append(("2018-09-01", "Peru", "Haiti", 2, 0))
+    # Test period: same pecking order holds.
+    for _ in range(4):
+        rows.append(("2020-01-01", "Brazil", "Haiti", 3, 0))
+        rows.append(("2020-06-01", "Brazil", "Peru", 2, 0))
+    df = pd.DataFrame(rows, columns=["date", "home_team", "away_team", "home_score", "away_score"])
+    df["date"] = pd.to_datetime(df["date"])
+    df["tournament"] = "Friendly"
+    df["neutral"] = False
+    return df
+
+
+def test_holdout_reports_model_and_naive():
+    report = temporal_holdout(
+        _matches(), split_date=pd.Timestamp("2019-06-01"),
+        model_config=MODEL_CFG, mc_config=MC_CFG, canonical=lambda x: x,
+    )
+    for key in ["model", "naive", "beats_baseline", "n_test"]:
+        assert key in report
+    for metric in ["log_loss", "brier", "accuracy"]:
+        assert metric in report["model"]
+        assert metric in report["naive"]
+    assert report["n_test"] == 8
+
+
+def test_model_beats_naive_on_separable_data():
+    report = temporal_holdout(
+        _matches(), split_date=pd.Timestamp("2019-06-01"),
+        model_config=MODEL_CFG, mc_config=MC_CFG, canonical=lambda x: x,
+    )
+    # On clearly separable data the model should beat the global-frequency baseline.
+    assert report["model"]["log_loss"] < report["naive"]["log_loss"]
+    assert report["beats_baseline"] is True
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `python -m pytest tests/test_evaluate.py -v`
+Expected: FAIL with `ModuleNotFoundError: No module named 'footy.evaluate'`
+
+- [ ] **Step 3: Write implementation**
+
+`footy/evaluate.py`:
+```python
+from __future__ import annotations
+
+import pandas as pd
+
+from footy.predict import Predictor
+from footy.metrics import log_loss_1x2, brier_1x2, accuracy_1x2, naive_baseline_probs
+
+
+def _outcome(home_score: int, away_score: int) -> str:
+    if home_score > away_score:
+        return "home"
+    if home_score < away_score:
+        return "away"
+    return "draw"
+
+
+def temporal_holdout(matches: pd.DataFrame, split_date, model_config: dict,
+                     mc_config: dict, canonical) -> dict:
+    """Train on rows before split_date, evaluate on rows on/after it.
+
+    Never trains on the future. Compares the model's 1X2 probabilities against
+    the naive global-frequency baseline derived from the training period only.
+    """
+    split_date = pd.Timestamp(split_date)
+    train = matches[matches["date"] < split_date]
+    test = matches[matches["date"] >= split_date]
+
+    predictor = Predictor.from_matches(
+        train, model_config=model_config, mc_config=mc_config,
+        canonical=canonical, as_of=split_date,
+    )
+
+    train_outcomes = [
+        _outcome(int(r.home_score), int(r.away_score))
+        for r in train.itertuples(index=False)
+    ]
+    naive = naive_baseline_probs(train_outcomes)
+
+    model_probs: list[dict] = []
+    naive_probs: list[dict] = []
+    actuals: list[str] = []
+    for row in test.itertuples(index=False):
+        try:
+            pred = predictor.predict(
+                row.home_team, row.away_team, neutral=bool(row.neutral)
+            )
+        except ValueError:
+            # Team unseen in the training period; skip (cannot score fairly).
+            continue
+        model_probs.append({
+            "home": pred["team_a_win"] / 100.0,
+            "draw": pred["draw"] / 100.0,
+            "away": pred["team_b_win"] / 100.0,
+        })
+        naive_probs.append(dict(naive))
+        actuals.append(_outcome(int(row.home_score), int(row.away_score)))
+
+    model_metrics = {
+        "log_loss": log_loss_1x2(model_probs, actuals),
+        "brier": brier_1x2(model_probs, actuals),
+        "accuracy": accuracy_1x2(model_probs, actuals),
+    }
+    naive_metrics = {
+        "log_loss": log_loss_1x2(naive_probs, actuals),
+        "brier": brier_1x2(naive_probs, actuals),
+        "accuracy": accuracy_1x2(naive_probs, actuals),
+    }
+    return {
+        "model": model_metrics,
+        "naive": naive_metrics,
+        "beats_baseline": bool(model_metrics["log_loss"] < naive_metrics["log_loss"]),
+        "n_test": len(actuals),
+        "split_date": str(split_date.date()),
+    }
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `python -m pytest tests/test_evaluate.py -v`
+Expected: PASS (2 passed)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add footy/evaluate.py tests/test_evaluate.py
+git commit -m "feat: temporal hold-out evaluation vs naive baseline
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+```
+
+---
+
 ## Self-Review
 
 **Spec coverage:**
@@ -2290,4 +2451,4 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 **Type consistency:** `clean_results→CleanResult(df, report, dropped)` (T2, used T15); `attach_elo→home_elo_pre/away_elo_pre` (T4, asserted T16 indirectly); `fit_dixon_coles(matches, config, as_of)→DixonColesModel.rates(a,b,neutral)` (T9, used T12); `simulate(lam_a,lam_b,cfg)` dict keys reused verbatim in T12; `Predictor.from_matches(...)` signature identical across T12/T14/T16; `compute_reliability(...)` kwargs identical T11/T12. ✓
 
-**Note on §12 hold-out evaluation:** Task 13 ships the metric primitives + naive baseline. A full temporal hold-out backtest harness is light here by design (spec defers deep backtesting to sub-project 4); the primitives + smoke test (T16) cover the baseline bar. If a temporal split driver is desired in this sub-project, it is a thin addition over `metrics.py` and can be appended as Task 18 without touching other tasks.
+**Note on §12 hold-out evaluation:** Task 13 ships metric primitives + naive baseline; **Task 18** adds the temporal hold-out driver (`temporal_holdout`) that trains before a split date, evaluates after it, and reports model-vs-naive log loss / brier / accuracy with `beats_baseline`. Deep backtesting (per tournament/team, calibration curve, confusion matrix) remains sub-project 4.
