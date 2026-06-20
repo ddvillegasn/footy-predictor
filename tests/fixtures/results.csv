@@ -1,0 +1,7 @@
+date,home_team,away_team,home_score,away_score,tournament,city,country,neutral
+2019-06-01,Brazil,Haiti,7,1,Friendly,Miami,United States,TRUE
+2019-09-10,Brazil,Peru,0,1,Friendly,Los Angeles,United States,TRUE
+2019-10-15,Haiti,Peru,1,0,Friendly,Port-au-Prince,Haiti,FALSE
+2021-06-01,Brazil,Haiti,2,0,FIFA World Cup,Rio,Brazil,FALSE
+2021-06-01,Brazil,Haiti,2,0,FIFA World Cup,Rio,Brazil,FALSE
+2022-03-01,Peru,Brazil,1,1,FIFA World Cup qualification,Lima,Peru,FALSE
