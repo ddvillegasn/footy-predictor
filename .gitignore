@@ -22,6 +22,7 @@ footy/data/external/cache/
 Thumbs.db
 .idea/
 .vscode/
+.claude/
 
 # Test / tooling
 .pytest_cache/
