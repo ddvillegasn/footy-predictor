@@ -1,0 +1,7 @@
+model_version: baseline-v1.0.0
+xi: 0.0018                # time-decay per day (~half-life 1.05y)
+max_goals: 10
+home_advantage_init: 0.25
+ridge: 0.01               # L2 on attack/defense for identifiability
+h2h_weight: 0.1           # low weight (sparse for national teams)
+min_matches_reliable: 10

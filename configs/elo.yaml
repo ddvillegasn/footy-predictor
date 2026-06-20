@@ -1,0 +1,8 @@
+initial_rating: 1500.0
+k_factor: 40.0
+home_advantage_elo: 65.0
+default_tournament_weight: 0.7
+tournament_weights:
+  "FIFA World Cup": 1.0
+  "FIFA World Cup qualification": 0.85
+  "Friendly": 0.4

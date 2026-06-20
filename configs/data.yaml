@@ -1,0 +1,14 @@
+raw_dir: international_results
+files:
+  results: results.csv
+  goalscorers: goalscorers.csv
+  shootouts: shootouts.csv
+  former_names: former_names.csv
+min_date: null            # no hard cut; time-decay handles recency
+aliases:                  # always-on safe spelling unifications
+  "Vietnam Republic": "South Vietnam"
+sensitive_merges:         # historical merges OFF by default (traceability)
+  enabled: false
+  mappings:
+    "West Germany": "Germany"
+    "East Germany": "Germany"
