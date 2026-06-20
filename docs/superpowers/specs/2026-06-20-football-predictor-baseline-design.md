@@ -25,6 +25,11 @@ con su propio ciclo spec → plan → build:
 
 Este documento cubre **únicamente el sub-proyecto 1**.
 
+> **Nota roadmap (sub-proyecto 4–5):** si el objetivo final son apuestas, Accuracy no
+> basta. Evaluar entonces métricas económicas: **Closing Line Value (CLV)**, **ROI
+> teórico** y **Yield** contra cuotas de mercado. Fuera de alcance del baseline; anotado
+> para no olvidarlo.
+
 ### Reglas heredadas descartadas
 Las "reglas no negociables" del prompt original (`clinica_id` multi-tenant/anti-IDOR,
 funciones DB best-effort, golden test, deploy `/health`) provienen de otro proyecto
@@ -190,7 +195,10 @@ Calculadas **solo con partidos previos a la fecha del partido** (anti-leakage).
 - Ataque/defensa por equipo = parámetros del ajuste Dixon-Coles (no medias crudas).
 - Forma reciente: media goles a favor/contra en últimos 5/10/20 partidos (ventana móvil, solo pasado).
 - Porterías en cero.
-- H2H: V/E/D y goles en enfrentamientos directos previos.
+- **H2H (peso bajo / opcional en baseline):** V/E/D y goles en enfrentamientos directos
+  previos. Para selecciones hay muchísimos pares que nunca se enfrentaron → H2H es
+  esparso y poco fiable. Se calcula pero entra con peso bajo y conmutable en `model.yaml`
+  (default: bajo). Elo captura mejor esa señal. Subir su peso es decisión de v2.
 
 > **Eliminada** "% conversión de oportunidades": requiere tiros/remates reales que no
 > existen para selecciones. No se inventa la feature.
@@ -218,6 +226,19 @@ log(λ_b) = μ + ataque[team_b] - defensa[team_a]
 - Ajuste por máxima verosimilitud ponderada (`scipy.optimize`).
 - Modelo ajustado → `artifacts/models/` (parámetros + fecha de entrenamiento + versión).
 - **Determinista**: misma data + config → mismos parámetros.
+
+### 7.1 Versionado y reproducibilidad
+- **Esquema `model_version`** (SemVer con prefijo de familia), fijado desde ahora:
+  ```text
+  baseline-v1.0.0   # este sub-proyecto (Poisson/Dixon-Coles)
+  baseline-v1.1.0   # mejoras al baseline
+  ml-v2.0.0         # familia ML (sub-proyecto 3)
+  ```
+  `predict_match` devuelve este string en `model_version`.
+- **Snapshot de configuración por entrenamiento:** cada modelo guardado en
+  `artifacts/models/<model_version>/` incluye **copia congelada** de `model.yaml`,
+  `elo.yaml` y `data.yaml` usados, más hash del dataset. Permite reproducir
+  exactamente un entrenamiento antiguo.
 
 ---
 
