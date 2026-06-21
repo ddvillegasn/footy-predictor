@@ -1,0 +1,40 @@
+name: "FIFA World Cup 2026"
+neutral_default: true
+points: {win: 3, draw: 1, loss: 0}
+groups:
+  A: [Mexico, Canada, Ecuador, Honduras]
+  B: [United States, Wales, Iran, Ghana]
+  C: [Argentina, Poland, Australia, Tunisia]
+  D: [France, Denmark, Senegal, Peru]
+  E: [Spain, Germany, Japan, Costa Rica]
+  F: [Belgium, Croatia, Morocco, Jamaica]
+  G: [Brazil, Switzerland, Cameroon, Serbia]
+  H: [Portugal, Uruguay, South Korea, Bolivia]
+  I: [England, Netherlands, Nigeria, Qatar]
+  J: [Italy, Colombia, Egypt, Saudi Arabia]
+  K: [Algeria, Sweden, Chile, Ivory Coast]
+  L: [Panama, Norway, Paraguay, Ukraine]
+group_schedule: round_robin
+qualification: {per_group_advance: 2, best_thirds: 8}
+tiebreakers: [points, goal_difference, goals_for, head_to_head, fair_play, drawing_of_lots]
+thirds_ranking: [points, goal_difference, goals_for, drawing_of_lots]
+knockout:
+  rounds: [R32, R16, QF, SF, F]
+  thirds_assignment: ranked_order
+  bracket_r32:
+    - [winner_A, third_slot_1]
+    - [winner_B, third_slot_2]
+    - [winner_C, third_slot_3]
+    - [winner_D, third_slot_4]
+    - [winner_E, third_slot_5]
+    - [winner_F, third_slot_6]
+    - [winner_G, third_slot_7]
+    - [winner_H, third_slot_8]
+    - [winner_I, runner_A]
+    - [runner_B, runner_C]
+    - [winner_J, runner_D]
+    - [runner_E, runner_F]
+    - [winner_K, runner_G]
+    - [runner_H, runner_I]
+    - [winner_L, runner_J]
+    - [runner_K, runner_L]

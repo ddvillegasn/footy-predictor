@@ -1,0 +1,3 @@
+n_tournaments: 20000
+seed: 42
+neutral_default: true
