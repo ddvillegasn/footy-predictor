@@ -407,3 +407,8 @@ update-and-simulate --json
 7. `runner` provider-agnostic; fit del modelo 1 vez; `cycle` devuelve played/aggregate/scoreboard/meta; `watch` en minutos, corta con KeyboardInterrupt; CLI `--json`.
 8. `scoreboard`: predicho vs real out-of-sample (no reentrenar con torneo); reusa `metrics.py`; `predicted_prob`/`actual_prob`; `goal_mae` = MAE por equipo-partido.
 9. Aviso: `wc2026.yaml` (grupos reales) + `name_map`/`stage_map` deben mantenerse al día; los errores duros señalan desajustes.
+
+## 12. Backlog (no bloqueante, futuras versiones)
+
+- **SP4.1**: guardar un snapshot de la respuesta cruda del provider (p. ej. `artifacts/live/raw_<ts>.json`) para debugging cuando la API cambie de forma.
+- **Scoreboard calibración**: además de log-loss/Brier, añadir curva de fiabilidad / ECE (Expected Calibration Error) para detectar si el modelo está sobre/infra-confiado — muy útil para apuestas.
