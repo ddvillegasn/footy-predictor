@@ -1,18 +1,26 @@
-# CLAUDE.md — Football Predictor (sub-project 1) · resume guide
+# CLAUDE.md — Football Predictor · repo guide
 
-Baseline national-team match predictor. Package `footy`. Dixon-Coles Poisson +
-time-decay + Monte Carlo → `predict_match(team_a, team_b)` + `predict` CLI.
+National-team match predictor. Package `footy`. Dixon-Coles Poisson + time-decay +
+Monte Carlo → `predict_match` + `predict` CLI, plus a per-match **betting layer**
+(markets, fair odds, value/EV).
 
-## ⏱️ RESUME STATE (read first)
+## ⏱️ STATE (read first)
 
-- **Branch:** `feature/baseline-v1` (NOT main). Push only when user asks.
-- **Done & committed:** Task 0–8 (config, loaders, clean, names, Elo, FIFA/TM,
-  leakage golden, strength, context) + 2 chore commits (untrack pycache, pytest
-  config). **Full suite green: `python -m pytest` → 28 tests pass.**
-- **NEXT: Task 9 (Dixon-Coles fit).** Not started (dispatch was interrupted).
-- **Remaining: Task 9 → 18, then Gate 4.**
-- Spec: `docs/superpowers/specs/2026-06-20-football-predictor-baseline-design.md`
-- Plan (full code per task): `docs/superpowers/plans/2026-06-20-football-predictor-baseline.md`
+- **Branch:** `feature/baseline-v1`. Pushed to `origin` (ddvillegasn/international_results).
+- **SP1 (baseline) — COMPLETE:** Tasks 0–18. ETL, Dixon-Coles, Monte Carlo, features,
+  predict, CLI, metrics, ETL pipeline, real-data smoke test, **temporal hold-out**
+  (`evaluate.py`), docs.
+- **SP2 (betting layer) — COMPLETE:** `simulate_goals` refactor, `footy/betting/`
+  (markets, odds, value), `predict(include_markets=, book_odds=)`, CLI `--markets` /
+  `--book-odds`.
+- **Full suite green: `python -m pytest` → 83 tests pass** (smoke test ~2 min).
+- **NEXT (not started):** SP3 — tournament/fixture simulator (groups, bracket,
+  qualification probabilities). Needs its own spec→plan→build (brainstorm first).
+- Specs: `docs/superpowers/specs/2026-06-20-football-predictor-baseline-design.md`,
+  `…/2026-06-20-betting-markets-layer-design.md`
+- Plans: `docs/superpowers/plans/2026-06-20-football-predictor-baseline.md`,
+  `…/2026-06-20-betting-markets-layer.md`
+- Scope/roadmap: `docs/ALCANCE.md`. User manual: `README.md`.
 
 ## How to resume execution
 
