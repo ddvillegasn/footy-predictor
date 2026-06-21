@@ -254,7 +254,7 @@ velocidad, no el Mundial completo.
 2. Motor genérico config-driven; instanciado con WC2026 (12 grupos × 4, 32 a knockout).
 3. Desempates FIFA completos con mini-tabla H2H; `fair_play` neutral (sin datos); sorteo = fallback reproducible seedeado.
 4. Mejores terceros: orden ranked config-driven (tabla FIFA 495 = v2).
-5. Knockout: empate → prórroga (λ escalada) → penales ponderados `λ_a/(λ_a+λ_b)` con clipping `[0.05,0.95]`.
+5. Knockout: empate → prórroga (λ escalada) → penales ponderados `λ_a/(λ_a+λ_b)` con clipping `[0.05,0.95]` (configurable; v2 podría usar un rango más conservador tipo `[0.35,0.65]`).
 6. **Resultados en vivo**: `TournamentResults` en archivo aparte; jugados se fijan (no se samplean); identificación por `match_id` (knockout valida stage+teams).
 7. `sampler` cachea solo λ (clave incluye model_version + config_hash); nunca marcadores.
 8. `TournamentResult` guarda puntos/GD/GF de grupo (debug/explicabilidad).
