@@ -14,7 +14,7 @@ from footy.tournament.simulator import simulate_tournaments
 from footy.tournament.aggregate import aggregate, tournament_odds
 
 ROOT = Path(__file__).resolve().parent.parent
-N = 3000
+N = 1500
 
 print("Fitting real model (Dixon-Coles on full dataset)...")
 predictor = _build_default_predictor()
@@ -52,3 +52,7 @@ for team, d in champ[:12]:
     fair = out["odds"]["champion"].get(team, {}).get("fair_odds")
     print(f"{team:<18} champ {d['champion']*100:5.1f}%  reach_final {d['reach_F']*100:5.1f}%  "
           f"advance_group {d['advance_group']*100:5.1f}%  fair_odds {fair}")
+
+print(f"\n=== Group A advance_group probs (played_matches={len(results.played)}) ===")
+for t in structure.groups["A"]:
+    print(f"{t:<18} advance {agg['teams'][t]['advance_group']*100:5.1f}%")
