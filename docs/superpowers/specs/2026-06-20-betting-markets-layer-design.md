@@ -98,11 +98,13 @@ Líneas enteras (−1, 0, +1) = **v2** (requieren salida win/push/lose).
 ```json
 "correct_score": {
   "top": {"2-0": 0.12, "1-0": 0.11, "2-1": 0.09, "3-0": 0.08, "0-0": 0.07},
+  "other_probability": 0.53,
   "all_mass_check": 1.0
 }
 ```
-`top` = `top_scores` más probables; `all_mass_check` = suma de la matriz completa (≈1.0),
-verificable en tests.
+`top` = `top_scores` más probables; `other_probability` = masa fuera del top-N
+(`1 − sum(top)`), ayuda a leer cuánto peso quedó fuera; `all_mass_check` = suma de la
+matriz completa (≈1.0), verificable en tests.
 
 **Salida de `markets.py`** (probabilidades crudas, sin cuotas):
 ```json
@@ -111,7 +113,7 @@ verificable en tests.
   "double_chance": {"1X": 0.95, "12": 0.91, "X2": 0.14},
   "over_under": {"0.5": {"over": 0.97, "under": 0.03}, "2.5": {"over": 0.71, "under": 0.29}},
   "btts": {"yes": 0.42, "no": 0.58},
-  "correct_score": {"top": {"3-0": 0.12, "2-0": 0.11}, "all_mass_check": 1.0},
+  "correct_score": {"top": {"3-0": 0.12, "2-0": 0.11}, "other_probability": 0.77, "all_mass_check": 1.0},
   "handicap": {"-1.5": {"home": 0.55, "away": 0.45}}
 }
 ```
@@ -209,6 +211,13 @@ fair only). Cuota para mercado/outcome inexistente → ignorada + warning.
 - Con `book_odds` (implica markets) → aparece `value` solo en los outcomes/mercados dados.
 - `predict()` usa `simulate_goals()` una vez; reusa los arrays para 1X2 (SP1) y mercados.
 
+**Versionado y trazabilidad** (separa motor predictivo de capa de apuestas):
+- `betting_version` = `"sp2-v1.0.0"` (SemVer propio de la capa; cambia con líneas, Kelly,
+  hándicaps o nuevos mercados, independiente de `model_version`).
+- `simulation_meta.betting_config_version` = hash corto (sha1, 8 chars) del contenido
+  resuelto de `betting.yaml`. Permite reproducir un resultado aunque `betting.yaml` cambie
+  después. Solo aparece cuando hay `markets`.
+
 **`book_odds` acepta dict JSON anidado** (y el string CLI se parsea a esa estructura):
 ```json
 { "1x2": {"home": 1.45, "draw": 4.2}, "over_under": {"2.5": {"over": 1.67}} }
@@ -223,8 +232,10 @@ fair only). Cuota para mercado/outcome inexistente → ignorada + warning.
   "most_likely_score": "2-0",
   "prediction_reliability": 0.74,
   "model_version": "baseline-v1.0.0",
+  "betting_version": "sp2-v1.0.0",
   "simulation_meta": {"seed": 42, "n_sims": 100000, "lambda_a": 2.1,
-    "lambda_b": 0.6, "dc_enabled": false, "clip_max": 10},
+    "lambda_b": 0.6, "dc_enabled": false, "clip_max": 10,
+    "betting_config_version": "a1b2c3d4"},
   "markets": {
     "1x2": {"home": {"prob": 0.784, "fair_odds": 1.28},
             "draw": {"prob": 0.141, "fair_odds": 7.09},
@@ -288,7 +299,8 @@ Fixtures: arrays deterministas (seed fijo) y λ conocidos.
 
 **Validez del cross-check analítico:** las fórmulas cerradas asumen **Poisson independiente
 con `dc_enabled=False`** (sampleo actual). Si v2 introduce τ en el sampleo, estos tests
-deben recalibrarse. Marcado explícito en el test.
+deben **migrar de fórmula cerrada a consistencia interna** (comparar mercados entre sí y
+contra el 1X2, sin asumir Poisson independiente). Marcado explícito en el test.
 
 ---
 
@@ -305,3 +317,6 @@ deben recalibrarse. Marcado explícito en el test.
 9. `book_odds` acepta dict JSON y string CLI parseado a la misma estructura.
 10. `λ ≤ 0` = error por ahora.
 11. SP1 docs + hold-out (Task 17/18) + Gate 4 quedaron diferidos por el pivote; retomar tras SP2.
+12. `betting_version` separado de `model_version`; `betting_config_version` = hash de `betting.yaml` en `simulation_meta`.
+13. `correct_score` expone `other_probability` (masa fuera del top-N) además de `top` y `all_mass_check`.
+14. Cross-check analítico migra a consistencia interna si v2 mete τ en el sampleo.
