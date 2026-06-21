@@ -11,6 +11,11 @@ from footy.data.loaders import load_results, load_former_names
 from footy.data.clean import clean_results
 from footy.data.names import NameCanonicalizer
 from footy.predict import Predictor
+from footy.tournament.structure import load_structure
+from footy.tournament.sampler import MatchSampler
+from footy.live.provider import FootballDataProvider
+from footy.live.name_map import load_name_map
+from footy.live.runner import TournamentRunner, watch
 
 
 def parse_book_odds(text: str) -> dict:
@@ -119,3 +124,70 @@ def run(argv: list[str], predictor: Predictor | None = None) -> int:
 
 def main() -> None:
     sys.exit(run(sys.argv[1:]))
+
+
+def _build_runner() -> TournamentRunner:
+    data_cfg = load_config("data")
+    model_cfg = load_config("model")
+    mc_cfg = load_config("montecarlo")
+    live_cfg = load_config("live")
+    sim_cfg = load_config("tournament_sim")
+    if not isinstance(live_cfg.get("stage_map"), dict):
+        raise ValueError("configs/live.yaml: 'stage_map' must be a mapping")
+
+    base = "configs/tournaments"
+    structure = load_structure(f"{base}/wc2026.yaml")
+    predictor = _build_default_predictor()
+    canon = predictor.canonical
+    for g, teams in structure.groups.items():
+        structure.groups[g] = [canon(t) for t in teams]
+
+    sampler = MatchSampler(predictor.model, mc_cfg,
+                           model_version=model_cfg["model_version"],
+                           config_hash=config_fingerprint("montecarlo"))
+    name_map = load_name_map("configs/name_map.yaml")
+    return TournamentRunner(
+        structure, name_map, live_cfg["stage_map"], f"{base}/wc2026_results.yaml",
+        sampler, predictor, n=int(sim_cfg["n_tournaments"]), seed=int(sim_cfg["seed"]))
+
+
+def _format_summary(result: dict) -> str:
+    agg = result["aggregate"]; board = result["scoreboard"]
+    champs = sorted(agg["teams"].items(), key=lambda kv: -kv[1]["champion"])[:8]
+    lines = [f"Played matches: {result['played']}",
+             f"Scoreboard: n={board['n']} accuracy={board['accuracy']} "
+             f"log_loss={board['log_loss']} brier={board['brier']} goal_mae={board['goal_mae']}",
+             "Top champion probabilities:"]
+    for team, d in champs:
+        lines.append(f"  {team:<18} {d['champion'] * 100:5.1f}%")
+    return "\n".join(lines)
+
+
+def run_update(argv, runner=None, provider=None, emit=None) -> int:
+    parser = argparse.ArgumentParser(prog="update-and-simulate",
+                                     description="Fetch official results and re-simulate the tournament.")
+    parser.add_argument("--watch", type=int, default=None, metavar="MINUTES",
+                        help="Re-run every MINUTES minutes")
+    parser.add_argument("--json", action="store_true", help="Emit full JSON")
+    args = parser.parse_args(argv)
+
+    if runner is None:
+        runner = _build_runner()
+    if provider is None:
+        provider = FootballDataProvider.from_config(load_config("live"))
+
+    if emit is None:
+        if args.json:
+            emit = lambda result: print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            emit = lambda result: print(_format_summary(result))
+
+    if args.watch is not None:
+        watch(runner, provider, args.watch, emit)
+    else:
+        emit(runner.cycle(provider))
+    return 0
+
+
+def main_update() -> None:
+    sys.exit(run_update(sys.argv[1:]))

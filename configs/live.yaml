@@ -1,0 +1,11 @@
+base_url: "https://api.football-data.org/v4"
+competition_code: "WC"
+request_timeout: 10
+watch_minutes: 15
+stage_map:
+  GROUP_STAGE: group
+  LAST_32: R32
+  LAST_16: R16
+  QUARTER_FINALS: QF
+  SEMI_FINALS: SF
+  FINAL: F
