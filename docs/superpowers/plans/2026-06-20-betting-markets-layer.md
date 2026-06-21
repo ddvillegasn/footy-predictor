@@ -979,7 +979,8 @@ def test_cli_markets_flag(capsys):
 
 
 def test_cli_book_odds_flag(capsys):
-    code = cli.run(["Brazil", "Haiti", "--neutral", "--book-odds", "1x2.home=1.05"],
+    # Brazil ~0.86 win -> fair ~1.16, so 1.45 is a value bet (positive EV).
+    code = cli.run(["Brazil", "Haiti", "--neutral", "--book-odds", "1x2.home=1.45"],
                    predictor=_predictor())
     payload = json.loads(capsys.readouterr().out)
     assert code == 0 and payload["value"]["1x2"]["home"]["is_value"] is True
