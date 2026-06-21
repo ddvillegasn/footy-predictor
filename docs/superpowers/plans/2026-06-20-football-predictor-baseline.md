@@ -2288,16 +2288,21 @@ MC_CFG = {"n_sims": 20000, "seed": 42, "max_goals": 10, "ci_level": 0.90, "top_s
 
 
 def _matches():
+    # Mixed outcomes so the naive global-frequency baseline is non-degenerate
+    # (home/draw/away all present); the team-aware model still has signal.
     rows = []
-    # Train period: Brazil dominates Haiti and Peru.
     for _ in range(10):
-        rows.append(("2018-01-01", "Brazil", "Haiti", 4, 0))
-        rows.append(("2018-06-01", "Brazil", "Peru", 3, 0))
-        rows.append(("2018-09-01", "Peru", "Haiti", 2, 0))
-    # Test period: same pecking order holds.
+        rows.append(("2018-01-01", "Brazil", "Haiti", 3, 0))   # home
+        rows.append(("2018-02-01", "Haiti", "Brazil", 0, 3))   # away
+        rows.append(("2018-03-01", "Brazil", "Peru", 2, 1))    # home
+        rows.append(("2018-04-01", "Peru", "Brazil", 1, 1))    # draw
+        rows.append(("2018-05-01", "Peru", "Haiti", 2, 0))     # home
+        rows.append(("2018-05-15", "Haiti", "Peru", 1, 1))     # draw
+    # Test period: favourites at home; model should beat the global baseline.
     for _ in range(4):
         rows.append(("2020-01-01", "Brazil", "Haiti", 3, 0))
-        rows.append(("2020-06-01", "Brazil", "Peru", 2, 0))
+        rows.append(("2020-02-01", "Peru", "Haiti", 2, 0))
+        rows.append(("2020-03-01", "Brazil", "Peru", 2, 1))
     df = pd.DataFrame(rows, columns=["date", "home_team", "away_team", "home_score", "away_score"])
     df["date"] = pd.to_datetime(df["date"])
     df["tournament"] = "Friendly"
@@ -2315,7 +2320,7 @@ def test_holdout_reports_model_and_naive():
     for metric in ["log_loss", "brier", "accuracy"]:
         assert metric in report["model"]
         assert metric in report["naive"]
-    assert report["n_test"] == 8
+    assert report["n_test"] == 12
 
 
 def test_model_beats_naive_on_separable_data():
