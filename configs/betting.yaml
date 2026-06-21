@@ -1,0 +1,9 @@
+over_under_lines: [0.5, 1.5, 2.5, 3.5, 4.5]
+handicap_lines: [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]
+top_scores: 5
+value:
+  threshold: 0.0
+  ev_medium: 0.10
+  reliability_low: 0.40
+  reliability_high: 0.70
+  kelly_quarter_divisor: 4

@@ -1,0 +1,1 @@
+BETTING_VERSION = "sp2-v1.0.0"
