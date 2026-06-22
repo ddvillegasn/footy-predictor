@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 
 from footy.config import load_config, config_fingerprint
+from footy.persist import load_or_build, files_fingerprint
 from footy.data.loaders import load_results, load_former_names
 from footy.data.clean import clean_results
 from footy.data.names import NameCanonicalizer
@@ -70,7 +71,7 @@ def parse_book_odds(text: str) -> dict:
     return result
 
 
-def _build_default_predictor() -> Predictor:
+def _fit_default_predictor() -> Predictor:
     data_cfg = load_config("data")
     model_cfg = load_config("model")
     mc_cfg = load_config("montecarlo")
@@ -90,6 +91,20 @@ def _build_default_predictor() -> Predictor:
         canonical=canon.canonical, as_of=as_of,
         betting_config=bet_cfg, betting_config_version=config_fingerprint("betting"),
     )
+
+
+def _build_default_predictor() -> Predictor:
+    """Fit the model once and cache it to artifacts/; reload instantly while the data
+    and model config are unchanged (avoids a ~2 min refit on every app/CLI start)."""
+    data_cfg = load_config("data")
+    raw_dir = data_cfg["raw_dir"]
+    fingerprint = files_fingerprint([
+        f"{raw_dir}/{data_cfg['files']['results']}",
+        f"{raw_dir}/{data_cfg['files']['former_names']}",
+        "configs/model.yaml", "configs/montecarlo.yaml",
+        "configs/betting.yaml", "configs/data.yaml",
+    ])
+    return load_or_build("artifacts/base_predictor.pkl", fingerprint, _fit_default_predictor)
 
 
 def run(argv: list[str], predictor: Predictor | None = None) -> int:
