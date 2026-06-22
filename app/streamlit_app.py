@@ -5,6 +5,7 @@ import streamlit as st
 
 from footy.cli import _build_default_predictor
 from footy.config import load_config, config_fingerprint
+from footy.persist import load_or_build, files_fingerprint
 from footy.tournament.structure import load_structure
 from footy.tournament.results import load_results, TournamentResults
 from footy.tournament.sampler import MatchSampler
@@ -39,20 +40,29 @@ def build_engine():
 
 @st.cache_resource
 def build_live(_base_predictor, results_token):
-    """LIVE model refit with played matches. results_token busts the cache when results change."""
+    """LIVE model refit with played matches, persisted to disk so it survives restarts.
+    results_token busts the cache when results change."""
     if not RESULTS_PATH.exists():
         return _base_predictor
     structure = load_structure(STRUCTURE_PATH)
     canon = _base_predictor.canonical
     for g, teams in structure.groups.items():
         structure.groups[g] = [canon(t) for t in teams]
-    results = load_results(RESULTS_PATH, structure.groups)
+    try:
+        results = load_results(RESULTS_PATH, structure.groups)
+    except ValueError:
+        return _base_predictor
     played = [{"team_a": pm.team_a, "team_b": pm.team_b,
                "goals_a": pm.goals_a, "goals_b": pm.goals_b} for pm in results.played]
     if not played:
         return _base_predictor
-    return build_live_predictor(_base_predictor, played, tournament_date="2026-06-15",
-                                model_config=load_config("model"), mc_config=load_config("montecarlo"))
+
+    fingerprint = files_fingerprint([RESULTS_PATH, "configs/model.yaml"]) + "-live"
+    return load_or_build(
+        "artifacts/live_predictor.pkl", fingerprint,
+        lambda: build_live_predictor(_base_predictor, played, tournament_date="2026-06-15",
+                                     model_config=load_config("model"),
+                                     mc_config=load_config("montecarlo")))
 
 
 def _results_token() -> str:
@@ -105,8 +115,13 @@ def _refresh_from_api(base_predictor):
 
 
 def _render_match_tab(base_predictor, structure):
-    use_live = st.toggle("Usar modelo LIVE (con resultados del Mundial)", value=False)
-    predictor = build_live(base_predictor, _results_token()) if use_live else base_predictor
+    use_live = st.toggle("Usar modelo LIVE (con resultados del Mundial)", value=False,
+                         help="La primera vez re-ajusta el modelo (~2-3 min); luego queda cacheado.")
+    if use_live:
+        with st.spinner("Ajustando modelo LIVE (solo la primera vez)…"):
+            predictor = build_live(base_predictor, _results_token())
+    else:
+        predictor = base_predictor
     st.caption(f"Modelo en uso: {'LIVE (re-fit con jugados)' if use_live else 'BASE (histórico)'}")
 
     teams = team_list(base_predictor)
