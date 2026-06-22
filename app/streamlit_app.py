@@ -59,10 +59,25 @@ def _results_token() -> str:
     return str(RESULTS_PATH.stat().st_mtime) if RESULTS_PATH.exists() else "none"
 
 
-def _played_dicts(structure):
+def _current_structure(base_predictor):
+    """Load the on-disk wc2026.yaml fresh and canonicalize, so it always matches the
+    on-disk results (avoids crashes when the cached engine structure is stale)."""
+    structure = load_structure(STRUCTURE_PATH)
+    canon = base_predictor.canonical
+    for g, teams in structure.groups.items():
+        structure.groups[g] = [canon(t) for t in teams]
+    return structure
+
+
+def _played_dicts(base_predictor):
     if not RESULTS_PATH.exists():
         return []
-    results = load_results(RESULTS_PATH, structure.groups)
+    structure = _current_structure(base_predictor)
+    try:
+        results = load_results(RESULTS_PATH, structure.groups)
+    except ValueError:
+        # results/structure briefly out of sync (e.g. right after a refresh) -> treat as empty
+        return []
     return [{"team_a": pm.team_a, "team_b": pm.team_b,
              "goals_a": pm.goals_a, "goals_b": pm.goals_b} for pm in results.played]
 
@@ -144,10 +159,14 @@ def _render_match_tab(base_predictor, structure):
             st.dataframe(pd.DataFrame(vrows), use_container_width=True)
 
 
-def _render_tournament_tab(structure, sampler):
-    played = _played_dicts(structure)
-    if played:
-        results = load_results(RESULTS_PATH, structure.groups)
+def _render_tournament_tab(base_predictor, sampler):
+    structure = _current_structure(base_predictor)
+    try:
+        results = (load_results(RESULTS_PATH, structure.groups)
+                   if RESULTS_PATH.exists() else TournamentResults([]))
+    except ValueError:
+        results = TournamentResults([])
+    if results.played:
         stats = team_stats(structure, results)
         st.subheader("Stats por selección (en el torneo)")
         sdf = pd.DataFrame([
@@ -160,8 +179,6 @@ def _render_tournament_tab(structure, sampler):
 
     n = st.slider("Número de torneos a simular", 500, 10000, 1000, 500)
     if st.button("Simular Mundial", type="primary"):
-        results = (load_results(RESULTS_PATH, structure.groups)
-                   if RESULTS_PATH.exists() else TournamentResults([]))
         with st.spinner(f"Simulando {n} torneos…"):
             agg = tournament_probs(structure, results, sampler, n, seed=42)
         champ = sorted(agg["teams"].items(), key=lambda kv: -kv[1]["champion"])[:16]
@@ -173,8 +190,8 @@ def _render_tournament_tab(structure, sampler):
         st.dataframe(df, use_container_width=True)
 
 
-def _render_scoreboard_tab(base_predictor, structure):
-    played = _played_dicts(structure)
+def _render_scoreboard_tab(base_predictor):
+    played = _played_dicts(base_predictor)
     if not played:
         st.info("Aún no hay resultados cargados. Usa 'Actualizar desde API'.")
         return
@@ -202,9 +219,9 @@ def main():
     with tab1:
         _render_match_tab(base_predictor, structure)
     with tab2:
-        _render_tournament_tab(structure, sampler)
+        _render_tournament_tab(base_predictor, sampler)
     with tab3:
-        _render_scoreboard_tab(base_predictor, structure)
+        _render_scoreboard_tab(base_predictor)
 
 
 if __name__ == "__main__":
