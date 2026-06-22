@@ -39,5 +39,8 @@ def build_live_predictor(base_predictor, played_matches, tournament_date,
              "tournament": "FIFA World Cup", "neutral": True} for pm in played_matches]
     live_matches = pd.concat([base, pd.DataFrame(rows)], ignore_index=True) if rows else base
     as_of = live_matches["date"].max() + pd.Timedelta(days=1)
-    return Predictor.from_matches(live_matches, model_config=model_config, mc_config=mc_config,
-                                  canonical=base_predictor.canonical, as_of=as_of)
+    return Predictor.from_matches(
+        live_matches, model_config=model_config, mc_config=mc_config,
+        canonical=base_predictor.canonical, as_of=as_of,
+        betting_config=base_predictor.betting_config,
+        betting_config_version=base_predictor.betting_config_version)
