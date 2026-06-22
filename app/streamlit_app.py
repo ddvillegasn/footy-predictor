@@ -67,12 +67,21 @@ def _played_dicts(structure):
              "goals_a": pm.goals_a, "goals_b": pm.goals_b} for pm in results.played]
 
 
-def _refresh_from_api(structure):
+def _refresh_from_api(base_predictor):
     try:
         provider = FootballDataProvider.from_config(load_config("live"))
         name_map = load_name_map("configs/name_map.yaml")
-        known = {t for g in structure.groups.values() for t in g}
+        # Known teams = the FULL dataset (the fitted model's teams), not the current
+        # placeholder structure — otherwise every real team that is not a placeholder
+        # is wrongly reported as "not in dataset".
+        known = set(base_predictor.model.attack.keys())
         sync_structure(provider, name_map, known, STRUCTURE_PATH)
+        # Reload the freshly-written real structure (canonicalized) so ingest validates
+        # played results against the real teams, not the old placeholders.
+        structure = load_structure(STRUCTURE_PATH)
+        canon = base_predictor.canonical
+        for g, teams in structure.groups.items():
+            structure.groups[g] = [canon(t) for t in teams]
         n = ingest(provider, structure, name_map, load_config("live")["stage_map"], RESULTS_PATH)
         st.success(f"Actualizado desde la API: {n} partidos jugados.")
         st.cache_resource.clear()
@@ -188,7 +197,7 @@ def main():
     with st.sidebar:
         st.header("Datos en vivo")
         if st.button("🔄 Actualizar desde API"):
-            _refresh_from_api(structure)
+            _refresh_from_api(base_predictor)
     tab1, tab2, tab3 = st.tabs(["Predecir partido", "Mundial / Grupos", "Scoreboard"])
     with tab1:
         _render_match_tab(base_predictor, structure)
