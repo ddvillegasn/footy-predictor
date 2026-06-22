@@ -52,10 +52,10 @@ def test_team_list_sorted():
     assert team_list(FakePredictor()) == ["Argentina", "Brazil", "Haiti"]
 
 
-def test_match_prediction_without_book_odds_keeps_markets_off():
+def test_match_prediction_always_includes_markets():
     fp = FakePredictor()
     match_prediction(fp, "Brazil", "Haiti", neutral=True)
-    assert fp.last_kwargs["include_markets"] is False
+    assert fp.last_kwargs["include_markets"] is True
 
 
 def test_match_prediction_with_book_odds_forces_markets():
