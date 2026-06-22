@@ -57,7 +57,7 @@ def build_live(_base_predictor, results_token):
     if not played:
         return _base_predictor
 
-    fingerprint = files_fingerprint([RESULTS_PATH, "configs/model.yaml"]) + "-live"
+    fingerprint = files_fingerprint([RESULTS_PATH, "configs/model.yaml"]) + "-live-v2"
     return load_or_build(
         "artifacts/live_predictor.pkl", fingerprint,
         lambda: build_live_predictor(_base_predictor, played, tournament_date="2026-06-15",
@@ -165,13 +165,13 @@ def _render_match_tab(base_predictor, structure):
                          "prob": ou["over"]["prob"], "cuota": ou["over"]["fair_odds"]})
         rows.append({"mercado": "BTTS", "resultado": "sí",
                      "prob": mk["btts"]["yes"]["prob"], "cuota": mk["btts"]["yes"]["fair_odds"]})
-        st.dataframe(pd.DataFrame(rows), use_container_width=True)
+        st.dataframe(pd.DataFrame(rows), width="stretch")
         if "value" in out and out["value"].get("1x2"):
             vrows = [{"resultado": k, "edge %": v["edge_pct"], "EV": v["ev_per_unit"],
                       "stake": v["stake_recommendation"], "value": v["is_value"]}
                      for k, v in out["value"]["1x2"].items()]
             st.subheader("Valor vs tus cuotas")
-            st.dataframe(pd.DataFrame(vrows), use_container_width=True)
+            st.dataframe(pd.DataFrame(vrows), width="stretch")
 
 
 def _render_tournament_tab(base_predictor, sampler):
@@ -188,7 +188,7 @@ def _render_tournament_tab(base_predictor, sampler):
             {"equipo": t, "PJ": s["played"], "Pts": s["points"], "GF": s["gf"],
              "GC": s["ga"], "DG": s["gd"], "forma": "".join(s["form"][-5:])}
             for t, s in sorted(stats.items(), key=lambda kv: -kv[1]["points"]) if s["played"] > 0])
-        st.dataframe(sdf, use_container_width=True)
+        st.dataframe(sdf, width="stretch")
     else:
         st.info("Aún no hay partidos jugados. Usa 'Actualizar desde API' (barra lateral).")
 
@@ -202,7 +202,7 @@ def _render_tournament_tab(base_predictor, sampler):
              "avanza %": [round(d["advance_group"] * 100, 1) for _, d in champ]},
             index=[t for t, _ in champ])
         st.bar_chart(df[["campeón %"]])
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
 
 def _render_scoreboard_tab(base_predictor):
@@ -216,7 +216,7 @@ def _render_scoreboard_tab(base_predictor):
     c2.metric("Log loss", board["log_loss"])
     c3.metric("Brier", board["brier"])
     st.caption(f"Partidos: {board['n']} · goal MAE {board['goal_mae']} · modelo BASE (out-of-sample)")
-    st.dataframe(pd.DataFrame(board["matches"]), use_container_width=True)
+    st.dataframe(pd.DataFrame(board["matches"]), width="stretch")
 
 
 def main():
