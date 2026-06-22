@@ -30,3 +30,6 @@ Thumbs.db
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+
+# Local secrets
+configs/secrets.local.yaml
