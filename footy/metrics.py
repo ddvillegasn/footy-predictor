@@ -36,3 +36,33 @@ def accuracy_1x2(probs: list[dict], actuals: list[str]) -> float:
         predicted = max(OUTCOMES, key=lambda o: p[o])
         correct += int(predicted == actual)
     return correct / len(actuals)
+
+
+def calibration_buckets(probs: list, actuals: list, bins: int = 10) -> dict:
+    """Reliability buckets for the predicted (argmax) outcome's confidence vs how often
+    it was right, plus the Expected Calibration Error (ECE)."""
+    buckets = [{"lo": i / bins, "hi": (i + 1) / bins, "n": 0, "sum_p": 0.0, "hits": 0}
+               for i in range(bins)]
+    for p, actual in zip(probs, actuals):
+        pred = max(p, key=p.get)
+        conf = p[pred]
+        idx = min(bins - 1, int(conf * bins))
+        b = buckets[idx]
+        b["n"] += 1
+        b["sum_p"] += conf
+        b["hits"] += int(pred == actual)
+
+    total = sum(b["n"] for b in buckets) or 1
+    ece = 0.0
+    out = []
+    for b in buckets:
+        if b["n"] == 0:
+            out.append({"lo": round(b["lo"], 2), "hi": round(b["hi"], 2),
+                        "n": 0, "prob_media": None, "frecuencia": None})
+            continue
+        prob_media = b["sum_p"] / b["n"]
+        freq = b["hits"] / b["n"]
+        ece += (b["n"] / total) * abs(prob_media - freq)
+        out.append({"lo": round(b["lo"], 2), "hi": round(b["hi"], 2), "n": b["n"],
+                    "prob_media": round(prob_media, 4), "frecuencia": round(freq, 4)})
+    return {"bins": out, "ece": round(ece, 4)}
