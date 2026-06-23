@@ -17,6 +17,7 @@ from footy.tournament.sampler import MatchSampler
 from footy.live.provider import FootballDataProvider
 from footy.live.name_map import load_name_map
 from footy.live.runner import TournamentRunner, watch
+from footy.eval.report import run_report, DEFAULT_EDITIONS
 
 
 def parse_book_odds(text: str) -> dict:
@@ -206,3 +207,29 @@ def run_update(argv, runner=None, provider=None, emit=None) -> int:
 
 def main_update() -> None:
     sys.exit(run_update(sys.argv[1:]))
+
+
+def run_backtest_cli(argv) -> int:
+    import argparse
+    parser = argparse.ArgumentParser(prog="backtest",
+                                     description="Historical backtest vs baselines.")
+    parser.add_argument("--out", default="artifacts/backtest_report.json")
+    args = parser.parse_args(argv)
+    data_cfg = load_config("data")
+    raw_dir = data_cfg["raw_dir"]
+    report = run_report(
+        dataset_path=f"{raw_dir}/{data_cfg['files']['results']}",
+        editions=DEFAULT_EDITIONS,
+        model_config=load_config("model"),
+        elo_config=load_config("elo"),
+        out_path=args.out,
+    )
+    for edition, data in report["aggregate"].items():
+        print(f"{edition:8} acc={data['accuracy']:.3f} logloss={data['log_loss']:.3f} "
+              f"brier={data['brier']:.3f} (n={data['n']})")
+    print(f"Saved {args.out}")
+    return 0
+
+
+def main_backtest() -> None:
+    sys.exit(run_backtest_cli(sys.argv[1:]))
