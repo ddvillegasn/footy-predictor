@@ -1,11 +1,13 @@
 from datetime import datetime
 from pathlib import Path
+import json as _json
 
 import pandas as pd
 import streamlit as st
 
 from footy.cli import _build_default_predictor
 from footy.config import load_config, config_fingerprint
+from footy.eval.report import run_report, DEFAULT_EDITIONS
 from footy.persist import load_or_build, files_fingerprint
 from footy.tournament.structure import load_structure
 from footy.tournament.results import load_results, TournamentResults
@@ -23,6 +25,7 @@ from footy.ui import components as C
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_PATH = ROOT / "configs" / "tournaments" / "wc2026_results.yaml"
 STRUCTURE_PATH = ROOT / "configs" / "tournaments" / "wc2026.yaml"
+REPORT_PATH = ROOT / "artifacts" / "backtest_report.json"
 
 
 @st.cache_resource
@@ -265,6 +268,41 @@ def _render_scoreboard_tab(base_predictor):
         st.write(f"Log loss: {board['log_loss']} · Brier: {board['brier']}")
 
 
+def _render_eval_tab(base_predictor):
+    st.caption("Compara el modelo contra baselines (Elo, naive, azar) y hace backtest: "
+               "entrena antes de cada Mundial y evalúa en él. Así sabes si 60% es bueno.")
+    if st.button("Recalcular backtest (~6 min)"):
+        with st.spinner("Entrenando y evaluando por edición…"):
+            data_cfg = load_config("data")
+            raw = data_cfg["raw_dir"]
+            run_report(dataset_path=f"{raw}/{data_cfg['files']['results']}",
+                       editions=DEFAULT_EDITIONS, model_config=load_config("model"),
+                       elo_config=load_config("elo"), out_path=REPORT_PATH)
+        st.success("Backtest actualizado.")
+    if not REPORT_PATH.exists():
+        st.info("Aún no hay reporte. Aprieta **Recalcular backtest**.")
+        return
+    report = _json.loads(REPORT_PATH.read_text(encoding="utf-8"))
+    st.subheader("Resumen (todas las ediciones)")
+    agg = report["aggregate"]
+    st.dataframe(pd.DataFrame([
+        {"Modelo": name, "Aciertos %": round(d["accuracy"] * 100, 1),
+         "Log loss": d["log_loss"], "Brier": d["brier"], "Partidos": d["n"]}
+        for name, d in agg.items()], ).sort_values("Aciertos %", ascending=False),
+        width="stretch", hide_index=True)
+    edition = st.selectbox("Ver edición", list(report["editions"].keys()))
+    ed = report["editions"][edition]
+    if ed["n"] == 0:
+        st.info("Sin partidos para esa edición en el dataset.")
+        return
+    st.dataframe(pd.DataFrame([
+        {"Modelo": name, "Aciertos %": round(m["accuracy"] * 100, 1),
+         "Log loss": m["log_loss"], "Brier": m["brier"],
+         "Error goles": m["goal_mae"], "Partidos": m["n"]}
+        for name, m in ed["models"].items()],
+    ).sort_values("Aciertos %", ascending=False), width="stretch", hide_index=True)
+
+
 def main():
     st.set_page_config(page_title="Predicción Mundial 2026", layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
@@ -282,7 +320,7 @@ def main():
         st.caption("El modelo reacciona poco a un resultado suelto — es correcto. "
                    "Las cuotas/valor dependen del modelo; no son garantía.")
 
-    t1, t2, t3, t4 = st.tabs(["Partido", "Mundial", "Apuestas", "Scoreboard"])
+    t1, t2, t3, t4, t5 = st.tabs(["Partido", "Mundial", "Apuestas", "Scoreboard", "Evaluación"])
     with t1:
         _render_match_tab(base_predictor)
     with t2:
@@ -291,6 +329,8 @@ def main():
         _render_betting_tab(base_predictor)
     with t4:
         _render_scoreboard_tab(base_predictor)
+    with t5:
+        _render_eval_tab(base_predictor)
 
 
 if __name__ == "__main__":
