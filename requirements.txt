@@ -1,0 +1,10 @@
+# Deployment requirements.
+#
+# Hosting platforms (Streamlit Community Cloud, Hugging Face Spaces, Render)
+# install from requirements.txt and do not run `pip install -e .` on their own.
+# Without this file the app fails on `from footy...` because the package is
+# never installed.
+#
+# `[ui]` pulls in streamlit on top of the core dependencies declared in
+# pyproject.toml, so versions stay defined in exactly one place.
+-e .[ui]
