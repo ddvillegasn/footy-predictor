@@ -1,5 +1,7 @@
 # footy — predictor de partidos de selecciones + capa de apuestas
 
+[![tests](https://github.com/ddvillegasn/footy-predictor/actions/workflows/tests.yml/badge.svg)](https://github.com/ddvillegasn/footy-predictor/actions/workflows/tests.yml)
+
 Motor que predice partidos internacionales de selecciones con un modelo
 **Dixon-Coles** (Poisson con time-decay) y **Monte Carlo**, y una capa de
 **apuestas por partido** (mercados, cuotas justas, valor/EV opcional).
