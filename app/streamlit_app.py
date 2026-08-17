@@ -106,6 +106,17 @@ def _refresh_from_api(base_predictor):
         st.success(f"Actualizado desde la API: {n} partidos jugados.")
         st.cache_resource.clear()
     except Exception as exc:  # noqa: BLE001
+        # A missing API key is a configuration state, not a failure. Public demos run
+        # without one, and showing a raw traceback there reads as a broken app.
+        if "FOOTBALL_DATA_API_KEY" in str(exc):
+            st.info(
+                "Live updates need a free football-data.org API key, which this "
+                "deployment does not have configured. Everything else works: the "
+                "predictions run on the historical dataset bundled with the app. "
+                "To enable it, set `FOOTBALL_DATA_API_KEY` as an environment variable, "
+                "or put the key in `configs/secrets.local.yaml` when running locally."
+            )
+            return
         st.error(f"No se pudo actualizar desde la API: {exc}")
 
 
