@@ -3,6 +3,10 @@
 [![tests](https://github.com/ddvillegasn/footy-predictor/actions/workflows/tests.yml/badge.svg)](https://github.com/ddvillegasn/footy-predictor/actions/workflows/tests.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+### ▶ [Try it live](https://footy-predictor.streamlit.app/)
+
+Runs in the browser, nothing to install.
+
 A prediction engine for **national-team** football matches, built on a **Dixon-Coles**
 model (time-decayed Poisson) with **Monte Carlo** simulation, plus a per-match
 **betting-markets layer** that prices fair odds and flags value against a bookmaker's
