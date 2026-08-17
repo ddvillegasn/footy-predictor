@@ -325,6 +325,16 @@ def main():
     model_label = "LIVE" if st.session_state.get("use_live") else "BASE"
     st.markdown(C.header_html(updated, played, model_label), unsafe_allow_html=True)
 
+    # The tournament and scoreboard tabs were built for the 2026 World Cup, which
+    # finished in July. Saying so is better than letting a visitor discover that
+    # the bracket is over: the prediction engine is not tied to that tournament.
+    st.caption(
+        "Construido para el Mundial 2026. El torneo ya terminó, así que las pestañas "
+        "**Mundial** y **Scoreboard** muestran ese evento cerrado. El motor de "
+        "predicción no depende de él: en **Partido** y **Apuestas** puedes enfrentar "
+        "cualquier par de selecciones."
+    )
+
     with st.sidebar:
         st.header("Datos en vivo")
         if st.button("🔄 Actualizar desde API"):
