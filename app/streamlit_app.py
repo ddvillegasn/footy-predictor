@@ -315,7 +315,8 @@ def _render_eval_tab(base_predictor):
 
 
 def main():
-    st.set_page_config(page_title="Predicción Mundial 2026", layout="wide")
+    st.set_page_config(page_title="footy — international match predictor",
+                       page_icon="⚽", layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
     with st.spinner("Cargando modelo (solo la primera vez)…"):
         base_predictor, _structure, _sampler = build_engine()
