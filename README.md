@@ -15,6 +15,10 @@ prices.
 Point it at any fixture — `Brazil` vs `Haiti` — and get outcome probabilities, a full
 scoreline distribution, expected goals and priced markets.
 
+> **Project context.** Built for the 2026 World Cup, which finished in July 2026. The
+> **tournament** and **scoreboard** views cover that closed event. The prediction engine
+> itself is not tied to it — it fits any national-team fixture from the historical record.
+
 *[Léeme en español](README.es.md)*
 
 ---

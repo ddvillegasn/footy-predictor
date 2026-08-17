@@ -5,6 +5,11 @@
 
 Corre en el navegador, sin instalar nada.
 
+> **Contexto del proyecto.** Construido para el Mundial 2026, que terminó en julio de 2026.
+> Las vistas de **Mundial** y **Scoreboard** muestran ese evento ya cerrado. El motor de
+> predicción no depende de él: sirve para cualquier partido de selecciones del registro
+> histórico.
+
 *[Read this in English](README.md)*
 
 
