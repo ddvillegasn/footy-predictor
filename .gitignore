@@ -12,6 +12,10 @@ venv/
 # Artifacts (training outputs, regenerable)
 artifacts/
 !artifacts/.gitkeep
+# Precomputed model cache, shipped so a fresh deploy does not refit for ~90s.
+# Valid because files_fingerprint hashes content, not mtime.
+!artifacts/base_predictor.pkl
+!artifacts/base_predictor.pkl.fp
 
 # External source caches (regenerable / best-effort)
 footy/data/external/cache/
