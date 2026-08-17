@@ -1,9 +1,5 @@
 # footy — predictor de partidos de selecciones + capa de apuestas
 
-### ▶ [Pruébalo en vivo](https://footy-predictor.streamlit.app/)
-
-Corre en el navegador, sin instalar nada.
-
 *[Read this in English](README.md)*
 
 
